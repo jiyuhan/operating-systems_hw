@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<annotation>
+	<folder>moved_images</folder>
+	<filename>testing2-6-16-14:8:41-Grid_Images-26</filename>
+	<path>/home/mitziu/Documents/reCAPTCHA Project/Grid Test/moved_images/testing2-6-16-14:8:41-Grid_Images-26.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>450</width>
+		<height>450</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>street_signs</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>32</xmin>
+			<ymin>122</ymin>
+			<xmax>247</xmax>
+			<ymax>223</ymax>
+		</bndbox>
+	</object>
+</annotation>
