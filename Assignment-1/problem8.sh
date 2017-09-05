@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ps -A | grep "/usr/lib/" | wc -l
+ps -ef | grep "/usr/lib/" | wc -l
