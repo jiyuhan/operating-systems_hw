@@ -1,2 +1,1 @@
 5: almost done, there are two ways to go about it, but neither is perfect yet
-10: almost done, unzipping is not hard, have to come up with a way to distinguish all the file extensions (regex), and then move them.
