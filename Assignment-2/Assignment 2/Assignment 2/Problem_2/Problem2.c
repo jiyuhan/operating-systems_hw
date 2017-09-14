@@ -7,31 +7,46 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main (int argc, const char * argv[]) {
 
-    for(int j = 1; j < argc; j++) {
+	int inputNum = 0;
+	
+	
+	printf("input n:\n");
+	scanf("%d", &inputNum);
+	
+	while (inputNum > 100) {
+		printf("Input cannot be greater than 100... please try again\n");
+		scanf("%d", &inputNum);
+	}
+	
+	char * strArr[inputNum];
+
+	for(int i = 0; i < inputNum; i++) {
+		strArr[i] = (char *)malloc(1025 * sizeof(char));
+		scanf("%s", strArr[i]);
+		while(strlen(strArr[i]) > 1024) {
+			printf("word longer than 1024, try again...\n");
+			scanf("%s", strArr[i]);
+		} 
+	}
+	
+	
+
+    for(int j = 0; j < inputNum; j++) {
 
         int palindromeFlag = 1;
 
         // convert all the input lower case, and have them in a different char array.
         // also make sure all the inputs are less than 1024 char.
 
-        // char *lowerCasedInput[argc];
-        if(argc > 101) {
-            printf("EROOR: too many arguments. make sure there are no more than 100 inputs.\n");
-            return -1;
-        }
+        int strLen = strlen(strArr[j]);
 
-        int strLen = strlen(argv[j]);
-
-        if(strLen > 1024) {
-            printf("ERROR: word too long, make sure the word not exceeding 1024 characters.\n");
-            return -1;
-        }
         char lowerCasedInput[strLen];
         for(int i = 0; i < strLen; i++) {
-            lowerCasedInput[i] = (char)(tolower(argv[j][i]));
+            lowerCasedInput[i] = (char)(tolower(strArr[j][i]));
         }
         lowerCasedInput[strLen] = '\0';
 
@@ -50,6 +65,7 @@ int main (int argc, const char * argv[]) {
 
         if(palindromeFlag == 0) printf("NOT PALINDROME\n");
         else printf("PALINDROME\n");
+		free(strArr[j]);
     }
     return 0;
 }
