@@ -12,16 +12,16 @@
 int main (int argc, const char * argv[]) {
 
 	int inputNum = 0;
-	
-	
+
+
 	printf("input n:\n");
 	scanf("%d", &inputNum);
-	
+
 	while (inputNum > 100) {
 		printf("Input cannot be greater than 100... please try again\n");
 		scanf("%d", &inputNum);
 	}
-	
+
 	char * strArr[inputNum];
 
 	for(int i = 0; i < inputNum; i++) {
@@ -30,10 +30,10 @@ int main (int argc, const char * argv[]) {
 		while(strlen(strArr[i]) > 1024) {
 			printf("word longer than 1024, try again...\n");
 			scanf("%s", strArr[i]);
-		} 
+		}
 	}
-	
-	
+
+
 
     for(int j = 0; j < inputNum; j++) {
 

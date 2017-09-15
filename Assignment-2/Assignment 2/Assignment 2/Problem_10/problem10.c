@@ -6,11 +6,10 @@
 
 void add_and_print(char* num1, char* num2) {
 	// Implement this function.
-	// Add and print the result to standard output
 }
 
 int main (int argc , char * argv []) {
-	FILE *file = fopen("problem3.input","r");
+	FILE *file = fopen(argv[1],"r");
 	if (file == NULL) {
 		printf("Input file not found.\n");
 		return 1;
