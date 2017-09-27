@@ -2,5 +2,9 @@
 2. it's done
 3. it's done
 4. it's pretty much done. I still need to use the numbers I collected to calculate the average.
+<<<<<<< HEAD
 5. done with problem 5, I think it looks pretty good.
 6. done but it's kinda hard to distinguish between the questions and answers.
+=======
+5. 
+>>>>>>> d0c83a47e9236eda737722856d22d343c2e74472

@@ -13,6 +13,7 @@ int main (void) {
     for(int i = 0; i < size; i++) {
         printf("%d\n", getFibonacci(inputHolder[i]));
     }
+    return 0;
 }
 
 int getFibonacci(int nth) {
