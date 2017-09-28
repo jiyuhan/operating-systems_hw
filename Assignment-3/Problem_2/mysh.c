@@ -2,21 +2,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <curses.h>
+#include <dirent.h>
 
-/*TODO: get rid of optional white spaces and return a clean command sting */
-void optionalWhiteSpace(char * input) {
-
-}
+// strtok
 
 int main (int argc, char * argv[]) {
-    char scanfBuffer [256];
+    char scanfBuffer[1024];
     char cwd[1024];
+    char * command = (char *)malloc(1024 * sizeof(char));
+    char * arg= (char *)malloc(1024 * sizeof(char));
+    int i = 0;
+
     while(1) {
         printf("mysh> ");
-        scanf("%s", scanfBuffer);
+        scanf("%[^\n]%*c", scanfBuffer);
 
-        /*TODO: implement pwd  */
-        if(strcmp(scanfBuffer, "pwd") == 0) {
+        command = strtok (scanfBuffer, " ");
+        arg = strtok (NULL, " ");
+
+        if(strcmp(command, "pwd") == 0) {
             if (getcwd(cwd, sizeof(cwd)) != NULL) {
                 fprintf(stdout, "%s\n", cwd);
             }
@@ -25,48 +31,67 @@ int main (int argc, char * argv[]) {
             }
         }
 
-        /*TODO: implement "cd": goto HOME */
-        if(strcmp(scanfBuffer, "cd") == 0) {
-
+        else if(strcmp(command, "cd") == 0) {
+            if(arg == NULL) {
+                chdir(getenv("HOME"));
+            } else {
+                chdir(arg);
+            }
         }
 
-        /*TODO: implement "cd dir" goto a directory, check if exists then move */
-        if(strcmp(scanfBuffer, "cd dir") == 0) {
-
+        else if(strcmp(command, "show-dirs") == 0) {
+            DIR *d;
+            struct dirent *dir;
+            d = opendir(".");
+            if (d) {
+                while ((dir = readdir(d)) != NULL) {
+                    if(dir->d_type == DT_DIR)
+                        printf("%s\n", dir->d_name);
+                }
+                closedir(d);
+            }
         }
 
-        /*TODO: implement "cd " basic ls but with only directories */
-        if(strcmp(scanfBuffer, "show-dirs") == 0) {
-
+        else if(strcmp(command, "show-files") == 0) {
+            DIR *d;
+            struct dirent *dir;
+            d = opendir(".");
+            if (d) {
+                while ((dir = readdir(d)) != NULL) {
+                    if(dir->d_type != DT_DIR)
+                        printf("%s\n", dir->d_name);
+                }
+                closedir(d);
+            }
         }
 
-        /*TODO: implement "cd -" this shows all the files in this directory */
-        if(strcmp(scanfBuffer, "show-files") == 0) {
-
+        else if(strcmp(command, "mkdir") == 0) {
+            if(arg == NULL) printf("mkdir [new folder name]\n");
+            else {
+                char message[1024];
+                strcat(message, arg);
+                strcat(message, " already exists.\n");
+                if(! mkdir(arg, 0755)) {}
+                else fprintf(stderr, strcat(arg, " already exists.\n"));
+            }
         }
 
-        /*TODO: implement "cd -" this makes a new directory */
-        if(strcmp(scanfBuffer, "mkdir $name") == 0) {
-
+        else if(strcmp(command, "touch") == 0) {
+            FILE* file_ptr = fopen(arg, "w");
+            fclose(file_ptr);
         }
 
-        /*TODO: implement "touch $file-name", this functin will generate a new file under the current directory */
-        if(strcmp(scanfBuffer, "touch $file-name") == 0) {
-
+        else if(strcmp(command, "clear") == 0) {
+            system("clear");
         }
 
-        /*TODO: implement "clear" */
-        if(strcmp(scanfBuffer, "clear") == 0) {
-
+        else if(strcmp(command, "exit") == 0) {
+            exit(1);
         }
 
-        /*TODO: implement "exit" */
-        if(strcmp(scanfBuffer, "exit") == 0) {
-
+        else {
+            printf("unrecognized command\n");
         }
     }
-
-
-
     return 0;
 }
