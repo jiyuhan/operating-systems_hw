@@ -25,36 +25,52 @@ int main (int argc, char * argv[]) {
     char * command = (char *)malloc(MAX_INPUT_SIZE * sizeof(char));
     char * arg= (char *)malloc(MAX_INPUT_SIZE * sizeof(char));
     int i = 0;
-    
+
     printf("mysh> ");
 
     while(1) {
-        
+
         scanf("%[^\n]%*c", scanfBuffer);
 
         command = strtok (scanfBuffer, " ");
         arg = strtok (NULL, " ");
-        
+
         int rc = fork();
-        
+
         // fork failed
         if(rc < 0) {
-        	   printf("Fork failed\n");
-				return 1;
+            printf("Fork failed\n");
+			return 1;
         }
         // in child process, run command
         else if(rc == 0){
             execCommand(command, arg);
         }
-        
+
         // in parent process
         else {
 
-        }        
+        }
     }
     return 0;
 }
 
+/*
+ * Name: execCommand
+ * param: string command, string argument.
+ * return: error 1, good 0;
+ *
+ * description: this function takes in the name of a shell command and its
+ * (optional) arguments. Now it supports:
+ * pwd          - path
+ * cd           - return HOME
+ * show-dirs    - shows all subdirectories under current directory.
+ * show-files   - shows all the files under current directory.
+ * mkdir [name] - makes a new folder under current directory.
+ * touch [name] - makes a new file under current directory.
+ * clear        - it clears the screen.
+ * exit         - it exits this shell.
+ */
 int execCommand( char * command, char * arg) {
     char cwd[1024];
     if(strcmp(command, "pwd") == 0) {
@@ -63,6 +79,8 @@ int execCommand( char * command, char * arg) {
             }
             else {
                 perror("getcwd() error");
+
+                return 1;
             }
         }
 
@@ -107,7 +125,11 @@ int execCommand( char * command, char * arg) {
                 strcat(message, arg);
                 strcat(message, " already exists.\n");
                 if(! mkdir(arg, 0755)) {}
-                else fprintf(stderr, strcat(arg, " already exists.\n"));
+                else {
+                    fprintf(stderr, strcat(arg, " already exists.\n"));
+
+                    return 1;
+                }
             }
         }
 
@@ -127,6 +149,8 @@ int execCommand( char * command, char * arg) {
         else {
             printf("unrecognized command\n");
         }
-        
+
         printf("mysh> ");
+
+        return 1;
 }
