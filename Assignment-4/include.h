@@ -8,5 +8,6 @@
 #include <curses.h>
 #include <dirent.h>
 #include <sys/wait.h>
+#include <sys/utsname.h>
 #include "define.h"
 #include "mysh.h"

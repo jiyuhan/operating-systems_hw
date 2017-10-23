@@ -1,27 +1,22 @@
 #include "include.h"
-
 int main(int argc, char * argv[]) {
     // since the maximum length of input in shell should be 512B
     char scanfBuffer[MAX_INPUT_SIZE];
     char * token[MAX_INPUT_SIZE];
     char redir_path[MAX_INPUT_SIZE];
+    char idleString[MAX_INPUT_SIZE];
 
     int i = 0;
     int argcount = 0;
-
     /*
-     * this register uses bit manipulation to manages # of flags
-     *      get:    Flag_Reg & (1 << NORMAL_JOB_FLAG)
-     * 0 if the command is NORMAL_JOB_FLAG
-     * 1 if the command is BACKGROUND_JOB_FLAG
-     * 2 if the command is REDIRECTION_JOB_FLAG
-     * 3 if the command is ERROR_JOB_FLAG
-     * TODO: 4 ~ 7 reserved
+     * 0 NORMAL_JOB_FLAG
+     * 1 BACKGROUND_JOB_FLAG
+     * 2 REDIRECTION_JOB_FLAG
+     * 3 ERROR_JOB_FLAG
      */
     char Flag_Reg = 0;
 
     int rc = 0;
-#if 1
     while(1) {
         printf("mysh> ");
         get_input(scanfBuffer);
@@ -32,11 +27,12 @@ int main(int argc, char * argv[]) {
         //TODO: if the following assumption is correct?
         // if it's built in command, we should ignore the "&" and ">" after.
         if(isBuiltInCommand(token[0]) == 0) {
-            printf("it is a built-in command\n");
             exec_v(token);
         }
+#if 1
         else {
             setFlagReg(&Flag_Reg, token, argcount, redir_path);
+            shiftIfPy(token, argcount);
             if((Flag_Reg & (1 << ERROR_JOB_FLAG)) != 0) {
                 char error_message[30] = "An error has occured\n";
                 write(STDERR_FILENO, error_message , strlen(error_message));
@@ -50,55 +46,46 @@ int main(int argc, char * argv[]) {
             }
             // child process
             else if( rc == 0) {
-                printf("child: %d\n", (int) getpid());
+                // printf("child: %d\n", (int) getpid());
                 if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) != 0) {
                     close(STDOUT_FILENO);
                     open(redir_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-
-                    execvp(token[0], token);
                 }
-
-                else {
-                    execvp(token[0], token);
+                if(execvp(token[0], token) < 0) {
+                    char error_message[30] = "An error has occured\n";
+                    write(STDERR_FILENO, error_message , strlen(error_message));
                 }
             }
             // parent process
             else {
-                // if(! check&) wait(pid); //
-                if((Flag_Reg & (1 << BACKGROUND_JOB_FLAG)) != 0) {
-                    printf("pushing: \n");
-                    // push rc to queue
-                    //
-                } else {
-                    printf("waiting\n");
+                if((Flag_Reg & (1 << BACKGROUND_JOB_FLAG)) == 0) {
                     wait(NULL);
                 }
-                // printf("child process: [%d]\n", rc);
-                // // wait(NULL) ;
             }
         }
-    }
 #else
-    printf("DEBUG MODE\n");
-    printf("before initialzed redir_path: %s\n", redir_path);
-    while(1) {
-        printf("mysh > ");
-        get_input(scanfBuffer);
-        tokenize(scanfBuffer, token, &argcount);
         setFlagReg(&Flag_Reg, token, argcount, redir_path);
-        if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) != 0) {
-            printf("now redir_path: %s\n", redir_path);
-            // close(STDERR_FILENO);
-            // open();
-
-            if(execvp(token[0], token) < 0) {
-                char error_message[30] = "An error has occured\n";
-                write(STDERR_FILENO, error_message , strlen(error_message));
-            }
+        if((Flag_Reg & (1 << NORMAL_JOB_FLAG)) != 0) {
+            printf("normal flag\n");
         }
-    }
+        if((Flag_Reg & (1 << ERROR_JOB_FLAG)) != 0) {
+            printf("error flag\n");
+        }
+        if((Flag_Reg & (1 << BACKGROUND_JOB_FLAG)) != 0) {
+            printf("background flag\n");
+        }
+        if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) != 0) {
+            printf("redirection flag\n");
+        }
+
+        // gethostname(idleString, MAX_INPUT_SIZE);
+        // printf("%s\n", idleString);
+        // idleString = strdup(getlogin());
+        // printf("%s\n", idleString);
+
 #endif
-    free(token);
+    }
+    //free(token);
     return 0;
 }
 
@@ -135,9 +122,9 @@ void tokenize(char * arg, char * token[], int * argcount) {
 }
 
 int isBuiltInCommand(char * command) {
-    char * builtInCommandList[8] = {"pwd", "cd", "show-dirs", "show-files", "mkdir", "touch", "clear", "exit"};
+    char * builtInCommandList[9] = {"pwd", "cd", "show-dirs", "show-files", "mkdir", "touch", "clear", "exit", "wait"};
 
-    for(int i = 0; i < 8; i++)
+    for(int i = 0; i < 9; i++)
         if(strcmp(command, builtInCommandList[i]) == 0) return 0;
     return 1;
 }
@@ -162,6 +149,7 @@ void setFlagReg(char * flag, char * args[], int argcount, char * redir_path) {
         }
         /* check if one has > in front of & */
         if(strcmp(args[argcount - 3], ">") == 0) {
+            *flag |= (1 << BACKGROUND_JOB_FLAG);
             *flag |= (1 << REDIRECTION_JOB_FLAG);
             strcpy(redir_path, args[argcount - 2]);
             for(i = 1; i <= 3; i++) {
@@ -205,6 +193,7 @@ void exec_v(char * args[]) {
     else if(strcmp(command, "touch") == 0) touch(args);
     else if(strcmp(command, "clear") == 0) clear_c();
     else if(strcmp(command, "exit") == 0) exit(0);
+    else if(strcmp(command, "wait") == 0) wait_c(0);
 }
 
 void pwd() {
@@ -270,4 +259,28 @@ void touch(char * args[]) {
 
 void clear_c() {
     printf("\033[H\033[J");
+}
+
+void wait_c() {
+    // while ((ret=dequeue(&head)) > 0) {
+    //     // printf("dequeued %d\n", ret);
+    //     waitpid(ret, , );
+    // }
+
+    waitpid(-1, NULL, WNOHANG);
+}
+
+int shiftIfPy(char * args[], int argcount) {
+    char first_arg[MAX_INPUT_SIZE];
+    strcpy(first_arg, args[0]);
+    int length = strlen(first_arg);
+    if(length < 3) return -1;
+    if(first_arg[length - 1] == 'y' && first_arg[length - 2] == 'p' && first_arg[length - 3] == '.') {
+        for (int i = argcount; i > 0; i--)
+           args[i] = args[i - 1];
+        args[0] = "/usr/bin/python";
+        return 0;
+    }
+
+    return -1;
 }

@@ -39,3 +39,7 @@ void touch(char * args[]);
 
 /* clear */
 void clear_c();
+
+void wait_c();
+
+int shiftIfPy(char * args[], int argcount);
