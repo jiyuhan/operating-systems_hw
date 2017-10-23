@@ -4,13 +4,13 @@ int main(int argc, char * argv[]) {
     // since the maximum length of input in shell should be 512B
     char scanfBuffer[MAX_INPUT_SIZE];
     char * token[MAX_INPUT_SIZE];
+    char redir_path[MAX_INPUT_SIZE];
+
     int i = 0;
     int argcount = 0;
 
     /*
      * this register uses bit manipulation to manages # of flags
-     *      set:    Flag_Reg |= (1 << NORMAL_JOB_FLAG)
-     *      clear:  Flag_Reg &= (1 << NORMAL_JOB_FLAG)
      *      get:    Flag_Reg & (1 << NORMAL_JOB_FLAG)
      * 0 if the command is NORMAL_JOB_FLAG
      * 1 if the command is BACKGROUND_JOB_FLAG
@@ -21,8 +21,7 @@ int main(int argc, char * argv[]) {
     char Flag_Reg = 0;
 
     int rc = 0;
-
-
+#if 1
     while(1) {
         printf("mysh> ");
         get_input(scanfBuffer);
@@ -34,12 +33,10 @@ int main(int argc, char * argv[]) {
         // if it's built in command, we should ignore the "&" and ">" after.
         if(isBuiltInCommand(token[0]) == 0) {
             printf("it is a built-in command\n");
-
-            //TODO: fix this
-            //execv(token[0], token);
+            exec_v(token);
         }
         else {
-            setFlagReg(&Flag_Reg, token, argcount);
+            setFlagReg(&Flag_Reg, token, argcount, redir_path);
             if((Flag_Reg & (1 << ERROR_JOB_FLAG)) != 0) {
                 char error_message[30] = "An error has occured\n";
                 write(STDERR_FILENO, error_message , strlen(error_message));
@@ -53,14 +50,23 @@ int main(int argc, char * argv[]) {
             }
             // child process
             else if( rc == 0) {
-                printf("running child process\n");
-                // if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) == 1) execvp(token[0], token);
+                printf("child: %d\n", (int) getpid());
+                if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) != 0) {
+                    close(STDOUT_FILENO);
+                    open(redir_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+
+                    execvp(token[0], token);
+                }
+
+                else {
+                    execvp(token[0], token);
+                }
             }
             // parent process
             else {
                 // if(! check&) wait(pid); //
                 if((Flag_Reg & (1 << BACKGROUND_JOB_FLAG)) != 0) {
-                    printf("pushing\n");
+                    printf("pushing: \n");
                     // push rc to queue
                     //
                 } else {
@@ -72,10 +78,30 @@ int main(int argc, char * argv[]) {
             }
         }
     }
+#else
+    printf("DEBUG MODE\n");
+    printf("before initialzed redir_path: %s\n", redir_path);
+    while(1) {
+        printf("mysh > ");
+        get_input(scanfBuffer);
+        tokenize(scanfBuffer, token, &argcount);
+        setFlagReg(&Flag_Reg, token, argcount, redir_path);
+        if((Flag_Reg & (1 << REDIRECTION_JOB_FLAG)) != 0) {
+            printf("now redir_path: %s\n", redir_path);
+            // close(STDERR_FILENO);
+            // open();
 
+            if(execvp(token[0], token) < 0) {
+                char error_message[30] = "An error has occured\n";
+                write(STDERR_FILENO, error_message , strlen(error_message));
+            }
+        }
+    }
+#endif
     free(token);
     return 0;
 }
+
 
 void get_input(char * argStr) {
     int bufferCount = 0;
@@ -116,9 +142,10 @@ int isBuiltInCommand(char * command) {
     return 1;
 }
 
-void setFlagReg(char * flag, char * args[], int argcount) {
+void setFlagReg(char * flag, char * args[], int argcount, char * redir_path) {
     // clear all flags before start
     *flag = 0;
+    int i = 0;
 
     if(argcount == 1) {
         *flag |= (1 << NORMAL_JOB_FLAG);
@@ -130,11 +157,16 @@ void setFlagReg(char * flag, char * args[], int argcount) {
 
         if(argcount == 2) {
             *flag |= (1 << BACKGROUND_JOB_FLAG);
+            args[argcount - 1] = NULL;
             return;
         }
         /* check if one has > in front of & */
         if(strcmp(args[argcount - 3], ">") == 0) {
             *flag |= (1 << REDIRECTION_JOB_FLAG);
+            strcpy(redir_path, args[argcount - 2]);
+            for(i = 1; i <= 3; i++) {
+                args[argcount - i] = NULL;
+            }
         }
         /* if there is no argument for >, then it's bad command input */
         else if(strcmp(args[argcount - 2], ">") == 0) {
@@ -146,6 +178,10 @@ void setFlagReg(char * flag, char * args[], int argcount) {
     /* if doesn't have & then check for > with valid input after it */
     if(strcmp(args[argcount - 2], ">") == 0) {
         *flag |= (1 << REDIRECTION_JOB_FLAG);
+        strcpy(redir_path, args[argcount - 1]);
+        for(i = 1; i <= 2; i++) {
+            args[argcount - i] = NULL;
+        }
     }
 
     /* if doesn't have an arg after >, then it's bad command input */
@@ -159,7 +195,6 @@ void setFlagReg(char * flag, char * args[], int argcount) {
     }
 }
 
-/* executes built-in commands */
 void exec_v(char * args[]) {
     char * command = args[0];
     if(strcmp(command, "pwd") == 0) pwd();
